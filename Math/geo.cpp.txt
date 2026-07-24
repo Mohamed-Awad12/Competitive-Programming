@@ -1,0 +1,513 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+using ld = long double;
+
+const ld PI = acosl(-1.0L);
+
+// ==================================================
+// Angle conversion
+// ==================================================
+
+ld degreesToRadians(ld degrees) {
+    return degrees * PI / 180.0L;
+}
+
+ld radiansToDegrees(ld radians) {
+    return radians * 180.0L / PI;
+}
+
+// ==================================================
+// Rectangle and square
+// ==================================================
+
+ld rectangleArea(ld length, ld width) {
+    return length * width;
+}
+
+ld rectanglePerimeter(ld length, ld width) {
+    return 2.0L * (length + width);
+}
+
+ld rectangleDiagonal(ld length, ld width) {
+    return hypotl(length, width);
+}
+
+ld squareArea(ld side) {
+    return side * side;
+}
+
+ld squarePerimeter(ld side) {
+    return 4.0L * side;
+}
+
+ld squareDiagonal(ld side) {
+    return side * sqrtl(2.0L);
+}
+
+// ==================================================
+// Triangle
+// ==================================================
+
+ld triangleArea(ld base, ld height) {
+    return base * height / 2.0L;
+}
+
+ld trianglePerimeter(ld a, ld b, ld c) {
+    return a + b + c;
+}
+
+// Heron's formula.
+// Returns -1 if the sides cannot form a triangle.
+ld triangleAreaFromSides(ld a, ld b, ld c) {
+    if (a + b <= c || a + c <= b || b + c <= a) {
+        return -1;
+    }
+
+    ld semiPerimeter = (a + b + c) / 2.0L;
+
+    return sqrtl(
+        semiPerimeter
+        * (semiPerimeter - a)
+        * (semiPerimeter - b)
+        * (semiPerimeter - c)
+    );
+}
+
+// Area using two sides and their included angle.
+ld triangleAreaUsingAngle(
+    ld sideA,
+    ld sideB,
+    ld angleDegrees
+) {
+    ld angle = degreesToRadians(angleDegrees);
+    return sideA * sideB * sinl(angle) / 2.0L;
+}
+
+ld equilateralTriangleArea(ld side) {
+    return sqrtl(3.0L) * side * side / 4.0L;
+}
+
+ld equilateralTriangleHeight(ld side) {
+    return sqrtl(3.0L) * side / 2.0L;
+}
+
+ld equilateralTrianglePerimeter(ld side) {
+    return 3.0L * side;
+}
+
+// Radius of the inscribed circle.
+ld triangleInradius(ld area, ld a, ld b, ld c) {
+    ld semiPerimeter = (a + b + c) / 2.0L;
+    return area / semiPerimeter;
+}
+
+// Radius of the circumscribed circle.
+ld triangleCircumradius(ld area, ld a, ld b, ld c) {
+    return a * b * c / (4.0L * area);
+}
+
+// ==================================================
+// Quadrilaterals
+// ==================================================
+
+ld parallelogramArea(ld base, ld height) {
+    return base * height;
+}
+
+ld parallelogramPerimeter(ld sideA, ld sideB) {
+    return 2.0L * (sideA + sideB);
+}
+
+ld trapezoidArea(ld parallelSideA, ld parallelSideB, ld height) {
+    return (parallelSideA + parallelSideB) * height / 2.0L;
+}
+
+ld rhombusArea(ld diagonal1, ld diagonal2) {
+    return diagonal1 * diagonal2 / 2.0L;
+}
+
+ld rhombusPerimeter(ld side) {
+    return 4.0L * side;
+}
+
+ld kiteArea(ld diagonal1, ld diagonal2) {
+    return diagonal1 * diagonal2 / 2.0L;
+}
+
+// ==================================================
+// Circle
+// ==================================================
+
+ld circleArea(ld radius) {
+    return PI * radius * radius;
+}
+
+ld circleCircumference(ld radius) {
+    return 2.0L * PI * radius;
+}
+
+ld circleDiameter(ld radius) {
+    return 2.0L * radius;
+}
+
+ld semicircleArea(ld radius) {
+    return circleArea(radius) / 2.0L;
+}
+
+// Includes the curved part and the diameter.
+ld semicirclePerimeter(ld radius) {
+    return PI * radius + 2.0L * radius;
+}
+
+// Angle is measured in degrees.
+ld sectorArea(ld radius, ld angleDegrees) {
+    return angleDegrees / 360.0L * circleArea(radius);
+}
+
+ld arcLength(ld radius, ld angleDegrees) {
+    return angleDegrees / 360.0L
+         * circleCircumference(radius);
+}
+
+// Perimeter of a sector: arc plus two radii.
+ld sectorPerimeter(ld radius, ld angleDegrees) {
+    return arcLength(radius, angleDegrees)
+         + 2.0L * radius;
+}
+
+ld annulusArea(ld outerRadius, ld innerRadius) {
+    return PI * (
+        outerRadius * outerRadius
+        - innerRadius * innerRadius
+    );
+}
+
+// ==================================================
+// Ellipse
+// ==================================================
+
+ld ellipseArea(ld semiMajorAxis, ld semiMinorAxis) {
+    return PI * semiMajorAxis * semiMinorAxis;
+}
+
+// Ramanujan approximation.
+ld ellipseCircumference(ld a, ld b) {
+    ld h = (a - b) * (a - b)
+         / ((a + b) * (a + b));
+
+    return PI * (a + b)
+         * (
+             1.0L
+             + 3.0L * h
+             / (
+                 10.0L
+                 + sqrtl(4.0L - 3.0L * h)
+             )
+         );
+}
+
+// ==================================================
+// Regular polygon
+// ==================================================
+
+ld regularPolygonPerimeter(int sides, ld sideLength) {
+    return sides * sideLength;
+}
+
+ld regularPolygonApothem(int sides, ld sideLength) {
+    return sideLength
+         / (
+             2.0L
+             * tanl(PI / sides)
+         );
+}
+
+ld regularPolygonArea(int sides, ld sideLength) {
+    return sides
+         * sideLength
+         * sideLength
+         / (
+             4.0L
+             * tanl(PI / sides)
+         );
+}
+
+// ==================================================
+// Coordinate geometry
+// ==================================================
+
+struct Point {
+    ld x;
+    ld y;
+};
+
+ld distanceBetweenPoints(Point a, Point b) {
+    return hypotl(a.x - b.x, a.y - b.y);
+}
+
+ld midpointX(Point a, Point b) {
+    return (a.x + b.x) / 2.0L;
+}
+
+ld midpointY(Point a, Point b) {
+    return (a.y + b.y) / 2.0L;
+}
+
+// Twice the signed triangle area.
+ld cross(Point a, Point b, Point c) {
+    return (b.x - a.x) * (c.y - a.y)
+         - (b.y - a.y) * (c.x - a.x);
+}
+
+ld triangleAreaFromPoints(Point a, Point b, Point c) {
+    return fabsl(cross(a, b, c)) / 2.0L;
+}
+
+// Shoelace formula.
+ld polygonArea(const vector<Point>& polygon) {
+    int n = static_cast<int>(polygon.size());
+    ld result = 0;
+
+    for (int i = 0; i < n; i++) {
+        int next = (i + 1) % n;
+
+        result += polygon[i].x * polygon[next].y;
+        result -= polygon[i].y * polygon[next].x;
+    }
+
+    return fabsl(result) / 2.0L;
+}
+
+ld polygonPerimeter(const vector<Point>& polygon) {
+    int n = static_cast<int>(polygon.size());
+    ld result = 0;
+
+    for (int i = 0; i < n; i++) {
+        result += distanceBetweenPoints(
+            polygon[i],
+            polygon[(i + 1) % n]
+        );
+    }
+
+    return result;
+}
+
+// ==================================================
+// Cube and cuboid
+// ==================================================
+
+ld cubeVolume(ld side) {
+    return side * side * side;
+}
+
+ld cubeSurfaceArea(ld side) {
+    return 6.0L * side * side;
+}
+
+ld cubeLateralSurfaceArea(ld side) {
+    return 4.0L * side * side;
+}
+
+ld cubeSpaceDiagonal(ld side) {
+    return side * sqrtl(3.0L);
+}
+
+ld cuboidVolume(ld length, ld width, ld height) {
+    return length * width * height;
+}
+
+ld cuboidSurfaceArea(ld length, ld width, ld height) {
+    return 2.0L * (
+        length * width
+        + width * height
+        + height * length
+    );
+}
+
+ld cuboidSpaceDiagonal(ld length, ld width, ld height) {
+    return sqrtl(
+        length * length
+        + width * width
+        + height * height
+    );
+}
+
+// ==================================================
+// Cylinder
+// ==================================================
+
+ld cylinderVolume(ld radius, ld height) {
+    return PI * radius * radius * height;
+}
+
+ld cylinderCurvedSurfaceArea(ld radius, ld height) {
+    return 2.0L * PI * radius * height;
+}
+
+ld cylinderTotalSurfaceArea(ld radius, ld height) {
+    return 2.0L * PI * radius * (radius + height);
+}
+
+// ==================================================
+// Cone
+// ==================================================
+
+ld coneSlantHeight(ld radius, ld height) {
+    return hypotl(radius, height);
+}
+
+ld coneVolume(ld radius, ld height) {
+    return PI * radius * radius * height / 3.0L;
+}
+
+ld coneCurvedSurfaceArea(ld radius, ld height) {
+    ld slantHeight = coneSlantHeight(radius, height);
+    return PI * radius * slantHeight;
+}
+
+ld coneTotalSurfaceArea(ld radius, ld height) {
+    ld slantHeight = coneSlantHeight(radius, height);
+    return PI * radius * (radius + slantHeight);
+}
+
+// ==================================================
+// Sphere and hemisphere
+// ==================================================
+
+ld sphereVolume(ld radius) {
+    return 4.0L * PI * radius * radius * radius / 3.0L;
+}
+
+ld sphereSurfaceArea(ld radius) {
+    return 4.0L * PI * radius * radius;
+}
+
+ld hemisphereVolume(ld radius) {
+    return 2.0L * PI * radius * radius * radius / 3.0L;
+}
+
+ld hemisphereCurvedSurfaceArea(ld radius) {
+    return 2.0L * PI * radius * radius;
+}
+
+// Includes the circular base.
+ld hemisphereTotalSurfaceArea(ld radius) {
+    return 3.0L * PI * radius * radius;
+}
+
+// ==================================================
+// Prism and pyramid
+// ==================================================
+
+ld prismVolume(ld baseArea, ld height) {
+    return baseArea * height;
+}
+
+ld prismSurfaceArea(
+    ld baseArea,
+    ld basePerimeter,
+    ld height
+) {
+    return 2.0L * baseArea
+         + basePerimeter * height;
+}
+
+ld pyramidVolume(ld baseArea, ld height) {
+    return baseArea * height / 3.0L;
+}
+
+// For a regular pyramid.
+ld pyramidSurfaceArea(
+    ld baseArea,
+    ld basePerimeter,
+    ld slantHeight
+) {
+    return baseArea
+         + basePerimeter * slantHeight / 2.0L;
+}
+
+// ==================================================
+// Cone frustum
+// ==================================================
+
+ld frustumSlantHeight(
+    ld outerRadius,
+    ld innerRadius,
+    ld height
+) {
+    return hypotl(
+        outerRadius - innerRadius,
+        height
+    );
+}
+
+ld frustumVolume(
+    ld outerRadius,
+    ld innerRadius,
+    ld height
+) {
+    return PI * height / 3.0L
+         * (
+             outerRadius * outerRadius
+             + outerRadius * innerRadius
+             + innerRadius * innerRadius
+         );
+}
+
+ld frustumCurvedSurfaceArea(
+    ld outerRadius,
+    ld innerRadius,
+    ld height
+) {
+    ld slantHeight = frustumSlantHeight(
+        outerRadius,
+        innerRadius,
+        height
+    );
+
+    return PI
+         * (outerRadius + innerRadius)
+         * slantHeight;
+}
+
+ld frustumTotalSurfaceArea(
+    ld outerRadius,
+    ld innerRadius,
+    ld height
+) {
+    return frustumCurvedSurfaceArea(
+               outerRadius,
+               innerRadius,
+               height
+           )
+         + PI * outerRadius * outerRadius
+         + PI * innerRadius * innerRadius;
+}
+
+// ==================================================
+// Example
+// ==================================================
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    cout << fixed << setprecision(10);
+
+    cout << circleArea(5) << '\n';
+    cout << triangleAreaFromSides(3, 4, 5) << '\n';
+    cout << sphereVolume(5) << '\n';
+
+    vector<Point> polygon = {
+        {0, 0},
+        {4, 0},
+        {4, 3},
+        {0, 3}
+    };
+
+    cout << polygonArea(polygon) << '\n';       // 12
+    cout << polygonPerimeter(polygon) << '\n';  // 14
+
+    return 0;
+}
