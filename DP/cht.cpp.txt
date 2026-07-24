@@ -1,0 +1,79 @@
+#include <bits/stdc++.h>
+#define test int tttt=0;cin>>tttt;while(tttt--)
+#define fast ios_base::sync_with_stdio(0);cin.tie(0);
+#define endl "\n"
+#define ll long long
+#define ld long double
+#define int ll
+#define sz(s) (int)(s).size()
+using namespace std;
+#pragma GCC optimize("O3")
+#pragma GCC optimize("Ofast,unroll-loops")
+const int M = 1e9+7, N = 5e5+5;
+struct Line {
+    mutable ll k, m, p;
+    bool operator<(const Line& o) const { return k < o.k; }
+    bool operator<(ll x) const { return p < x; }
+};
+
+struct HullDynamic : multiset<Line, less<>> {
+    // (for doubles, use inf = 1/.0, div(a,b) = a/b)
+    const ll inf = 2e18;
+    ll div(ll a, ll b) { // floored division
+        return a / b - ((a ^ b) < 0 && a % b); }
+    bool isect(iterator x, iterator y) {
+        if (y == end()) { x->p = inf; return false; }
+        if (x->k == y->k) x->p = x->m > y->m ? inf : -inf;
+        else x->p = div(y->m - x->m, x->k - y->k);
+        return x->p >= y->p;
+    }
+    void add(ll k, ll m) {
+        auto z = insert({k, m, 0}), y = z++, x = y;
+        while (isect(y, z)) z = erase(z);
+        if (x != begin() && isect(--x, y)) isect(x, y = erase(y));
+        while ((y = x) != begin() && (--x)->p >= y->p)
+            isect(x, erase(y));
+    }
+    ll query(ll x) {
+        assert(!empty());
+        auto l = *lower_bound(x);
+        return l.k * x + l.m;
+    }
+};
+
+void solve() {
+
+    int n; cin >> n;
+    vector<int>a(n + 1),p(n + 1),pi(n + 1);
+    for (int i = 1; i <= n; i++) {
+        cin >> a[i];
+        p[i] = p[i - 1] + a[i];
+        pi[i] = pi[i - 1] + a[i] * i;
+    }
+
+
+    HullDynamic cht;
+    int ans = -1e18;
+    cht.add(0,0);
+    for (int i = 1; i <= n; i++) {
+        ans = max(ans,cht.query(a[i]) + pi[n] - a[i] * i + p[i]);
+        cht.add(i,-p[i]);
+    }
+
+    HullDynamic cht2;
+    cht2.add(0,0);
+    for (int i = n; i; i--) {
+        ans = max(ans,cht2.query(a[i]) + pi[n] - a[i] * i + p[i]);
+        cht2.add(i,-p[i]);
+    }
+    // const --> pi[n] - a[i] * i + p[i]
+    // c --> -p[j]
+    // m --> j
+    cout << ans << endl;
+}
+signed main() {
+    fast
+
+    // test
+        solve();
+}

@@ -1,0 +1,90 @@
+#include <bits/stdc++.h>
+#define test int tttt=0;cin>>tttt;while(tttt--)
+#define fast ios_base::sync_with_stdio(0);cin.tie(0);
+#define endl "\n"
+#define ll long long
+#define ld long double
+#define int ll
+using namespace std;
+class  DSU {
+public:
+    vector<int> root;
+    vector<int> sz;
+    int components = 0;
+    DSU(int n) {
+        root.assign(n + 1, 0);
+        sz.assign(n + 1, 1);
+
+        for (int i = 0; i <= n; i++) {
+            root[i] = i;
+        }
+        components = n;
+    }
+
+    int getRoot(int node) {
+        if (root[node] == node) return node;
+        return root[node] = getRoot(root[node]);
+    }
+
+    void unionSets(int u, int v) {
+        u = getRoot(u);
+        v = getRoot(v);
+        if (u == v) return;
+        if (sz[u] > sz[v]) swap(u, v);
+        root[u] = v;
+        sz[v] += sz[u];
+        components--;
+    }
+
+    bool sameSet(int u, int v) {
+        return getRoot(u) == getRoot(v);
+    }
+
+    int largestSet() {
+        return *max_element(sz.begin(), sz.end());
+    }
+
+    int smallestSet() {
+        return *min_element(sz.begin(), sz.end());
+    }
+
+};
+
+
+const int B = 20;
+void solve() {
+    int n,m; cin >> n >> m;
+    vector<DSU>dsu(B,DSU(n));
+
+    for (int i = 0; i < m; i++) {
+        int i1,j1,i2,j2;
+        cin >> i1 >> j1 >> i2 >> j2;
+        int len = j1 - i1 + 1;
+        for (int b = B - 1; ~b; b--) {
+            if (!(len & 1 << b)) continue;
+            dsu[b].unionSets(i1,i2);
+            i1 += 1 << b;
+            i2 += 1 << b;
+        }
+    }
+
+    for (int b = B - 1; b >= 1; --b) {
+        for (int i = 1; i <= n; i++) {
+            int leader = dsu[b].getRoot(i);
+            if (i == leader) continue;
+            dsu[b - 1].unionSets(i,leader);
+            dsu[b -1].unionSets(i + (1 << (b - 1)), leader + (1 << (b - 1)));
+        }
+    }
+
+    cout << dsu[0].components << endl;
+
+}
+
+signed main() {
+    fast
+
+
+    // test
+    solve();
+}

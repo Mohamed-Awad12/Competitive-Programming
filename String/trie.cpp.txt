@@ -1,0 +1,123 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+struct Trie {
+    static constexpr int ALPHABET = 26;
+
+    struct Node {
+        array<int, ALPHABET> child;
+        int prefixCount;
+        int wordCount;
+
+        Node() : prefixCount(0), wordCount(0) {
+            child.fill(-1);
+        }
+    };
+
+    vector<Node> nodes;
+
+    Trie() {
+        nodes.emplace_back(); // Root node: index 0
+    }
+
+    int getIndex(char c) {
+        return c - 'a';
+    }
+
+    void insert(const string& word) {
+        int current = 0;
+        nodes[current].prefixCount++;
+
+        for (char c : word) {
+            int index = getIndex(c);
+
+            if (nodes[current].child[index] == -1) {
+                nodes[current].child[index] = nodes.size();
+                nodes.emplace_back();
+            }
+
+            current = nodes[current].child[index];
+            nodes[current].prefixCount++;
+        }
+
+        nodes[current].wordCount++;
+    }
+
+    bool contains(const string& word) {
+        int node = findNode(word);
+        return node != -1 && nodes[node].wordCount > 0;
+    }
+
+    bool startsWith(const string& prefix) {
+        return findNode(prefix) != -1;
+    }
+
+    int countWordsEqualTo(const string& word) {
+        int node = findNode(word);
+        return node == -1 ? 0 : nodes[node].wordCount;
+    }
+
+    int countWordsStartingWith(const string& prefix) {
+        int node = findNode(prefix);
+        return node == -1 ? 0 : nodes[node].prefixCount;
+    }
+
+    bool erase(const string& word) {
+        if (!contains(word)) {
+            return false;
+        }
+
+        int current = 0;
+        nodes[current].prefixCount--;
+
+        for (char c : word) {
+            int index = getIndex(c);
+            current = nodes[current].child[index];
+            nodes[current].prefixCount--;
+        }
+
+        nodes[current].wordCount--;
+        return true;
+    }
+
+private:
+    int findNode(const string& text) {
+        int current = 0;
+
+        for (char c : text) {
+            int index = getIndex(c);
+
+            if (index < 0 || index >= ALPHABET ||
+                nodes[current].child[index] == -1) {
+                return -1;
+            }
+
+            current = nodes[current].child[index];
+        }
+
+        return current;
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    Trie trie;
+
+    trie.insert("apple");
+    trie.insert("apple");
+    trie.insert("app");
+
+    cout << trie.contains("apple") << '\n';              // 1
+    cout << trie.contains("ap") << '\n';                 // 0
+    cout << trie.startsWith("ap") << '\n';               // 1
+    cout << trie.countWordsEqualTo("apple") << '\n';     // 2
+    cout << trie.countWordsStartingWith("app") << '\n';  // 3
+
+    trie.erase("apple");
+
+    cout << trie.countWordsEqualTo("apple") << '\n';     // 1
+
+    return 0;
+}

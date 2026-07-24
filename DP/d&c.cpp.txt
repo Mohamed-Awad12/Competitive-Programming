@@ -1,0 +1,81 @@
+#include <bits/stdc++.h>
+#include <ext/pb_ds/assoc_container.hpp>
+#include <ext/pb_ds/tree_policy.hpp>
+#define test int tttt=0;cin>>tttt;while(tttt--)
+#define fast ios_base::sync_with_stdio(0);cin.tie(0);
+#define endl "\n"
+#define ll long long
+#define ld long double
+#define int ll
+#define sz(s) (int)(s).size()
+using namespace std;
+#pragma GCC optimize("O3")
+#pragma GCC optimize("Ofast,unroll-loops")
+using namespace __gnu_pbds;
+
+vector<int> arr;
+vector<vector<int>> dp;
+int iter;
+const int N = 1e5+5;
+int L = 1, R = 0, ans = 0;
+vector<int>freq(N);
+void add(int idx) {
+    freq[arr[idx]]++;
+    if (freq[arr[idx]] == 1) ans++;
+}
+void rem(int idx) {
+    freq[arr[idx]]--;
+    if (freq[arr[idx]] == 0) ans--;
+}
+
+void move(int l, int r) {
+    while (R < r) add(++R);
+    while (L > l) add(--L);
+    while (R > r) rem(R--);
+    while (L < l) rem(L++);
+}
+
+void dc(int l, int r, int lx, int rx) {
+    if(l > r) return;
+
+    int mid = (l + r) >> 1;
+    int opt = 1;
+
+    for (int i = lx; i <= min(rx, mid); ++i) {
+        move(i, mid);
+        int curr = dp[(iter - 1) & 1][i - 1] +  ans; // cost
+        if(curr > dp[iter & 1][mid]) {
+            dp[iter & 1][mid] = curr;
+            opt = i;
+        }
+    }
+
+    dc(l, mid - 1, lx, opt);
+    dc(mid + 1, r, opt, rx);
+}
+
+void solve() {
+
+    int n, k; cin >> n >> k;
+    arr.assign(n + 1, 0);
+    for (int i = 1; i <= n; ++i) {
+        cin >> arr[i];
+    }
+
+    dp.assign(2, vector<int>(n + 1, -1e18));
+    dp[0][0] = 0;
+    for (int i = 1; i <= k; ++i) {
+        iter = i;
+        dc(1, n, 1, n);
+    }
+
+    cout << dp[k & 1][n] << '\n';
+}
+
+signed main() {
+    fast
+
+
+    // test
+    solve();
+}

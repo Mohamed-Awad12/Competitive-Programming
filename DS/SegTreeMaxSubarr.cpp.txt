@@ -1,0 +1,74 @@
+const int N = 2e5+5,Z = 0, M = 1e6+5;
+int a[N];
+
+
+struct Node {
+
+    ll ans = 0, sum = 0, pre = 0, suf = 0;
+
+} neutral;
+
+struct segtree {
+
+
+    vector<Node>seg;
+    segtree(int n) : seg(4 * n) {}
+    static Node merge(Node a, Node b) {
+        Node res;
+        res.sum = a.sum + b.sum;
+        res.pre = max(a.pre, a.sum + b.pre);
+        res.suf = max(b.suf, a.suf + b.sum);
+        res.ans = max({a.ans, b.ans, a.suf + b.pre});
+        return res;
+    }
+
+    Node single(int val) {
+        Node res;
+        res.pre = res.suf = res.ans = max(0, val);
+        res.sum = val;
+        return res;
+    }
+
+    void build(int node, int start, int end){
+        if(start == end){
+
+            seg[node] = single(a[start]);
+            return;
+        }
+
+        int mid = (start + end) >> 1;
+        build(node * 2, start, mid);
+        build(node * 2 + 1, mid + 1, end);
+
+         seg[node] = merge(seg[node * 2], seg[node * 2 + 1]);
+    }
+
+    void update(int node, int start, int end, int idx, int val) {
+
+        if (idx < start or idx > end) return;
+        if (start == end) {
+            seg[node] = single(val);
+            return;
+        }
+        int mid = (start + end) >> 1;
+        update(node * 2,start,mid,idx,val);
+        update(node * 2 + 1,mid + 1,end,idx,val);
+        seg[node] = merge(seg[node * 2], seg[node * 2 + 1]);
+    }
+
+    Node query(int node, int start, int end,int l, int r) {
+        if (start > r or l > end) return neutral;
+
+        if (start >= l and r >= end) {
+            return seg[node];
+        }
+        int mid = (start + end) >> 1;
+
+        auto left =  query(node * 2,start,mid,l,r);
+        auto right = query(node * 2 + 1,mid + 1,end,l,r);
+         return merge(left,right);
+    }
+
+
+
+};

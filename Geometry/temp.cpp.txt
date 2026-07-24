@@ -1,0 +1,657 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+using ld = long double;
+
+const ld EPS = 1e-12L;
+const ld PI = acosl(-1.0L);
+
+int sign(ld value) {
+    if (value > EPS) return 1;
+    if (value < -EPS) return -1;
+    return 0;
+}
+
+bool equal(ld a, ld b) {
+    return fabsl(a - b) <= EPS;
+}
+
+struct Point {
+    ld x, y;
+
+    Point(ld x = 0, ld y = 0) : x(x), y(y) {}
+
+    Point operator+(const Point& other) const {
+        return {x + other.x, y + other.y};
+    }
+
+    Point operator-(const Point& other) const {
+        return {x - other.x, y - other.y};
+    }
+
+    Point operator*(ld scalar) const {
+        return {x * scalar, y * scalar};
+    }
+
+    Point operator/(ld scalar) const {
+        return {x / scalar, y / scalar};
+    }
+
+    Point operator-() const {
+        return {-x, -y};
+    }
+
+    bool operator==(const Point& other) const {
+        return equal(x, other.x) && equal(y, other.y);
+    }
+
+    // Do not use EPS here because sorting needs a strict ordering.
+    bool operator<(const Point& other) const {
+        if (x != other.x) return x < other.x;
+        return y < other.y;
+    }
+};
+
+istream& operator>>(istream& input, Point& point) {
+    return input >> point.x >> point.y;
+}
+
+ostream& operator<<(ostream& output, const Point& point) {
+    return output << fixed << setprecision(10)
+                  << point.x << ' ' << point.y;
+}
+
+// --------------------------------------------------
+// Basic vector operations
+// --------------------------------------------------
+
+ld dot(Point a, Point b) {
+    return a.x * b.x + a.y * b.y;
+}
+
+ld cross(Point a, Point b) {
+    return a.x * b.y - a.y * b.x;
+}
+
+// Cross product of vectors AB and AC.
+ld cross(Point a, Point b, Point c) {
+    return cross(b - a, c - a);
+}
+
+ld normSquared(Point point) {
+    return dot(point, point);
+}
+
+ld length(Point point) {
+    return sqrtl(normSquared(point));
+}
+
+ld distance(Point a, Point b) {
+    return length(a - b);
+}
+
+Point unit(Point vector) {
+    ld len = length(vector);
+
+    if (len <= EPS) {
+        return {0, 0};
+    }
+
+    return vector / len;
+}
+
+Point perpendicular(Point vector) {
+    return {-vector.y, vector.x};
+}
+
+Point rotate(Point point, ld angleRadians) {
+    ld cosine = cosl(angleRadians);
+    ld sine = sinl(angleRadians);
+
+    return {
+        point.x * cosine - point.y * sine,
+        point.x * sine + point.y * cosine
+    };
+}
+
+Point rotateAround(Point point, Point center, ld angleRadians) {
+    return center + rotate(point - center, angleRadians);
+}
+
+ld angleBetween(Point a, Point b) {
+    return atan2l(fabsl(cross(a, b)), dot(a, b));
+}
+
+// -1: clockwise, 0: collinear, 1: counterclockwise.
+int orientation(Point a, Point b, Point c) {
+    return sign(cross(a, b, c));
+}
+
+// --------------------------------------------------
+// Lines and segments
+// --------------------------------------------------
+
+struct Line {
+    Point point;
+    Point direction;
+
+    Line() {}
+
+    Line(Point point, Point direction)
+        : point(point), direction(direction) {}
+
+    static Line fromPoints(Point a, Point b) {
+        return {a, b - a};
+    }
+};
+
+bool parallel(Line first, Line second) {
+    return sign(cross(first.direction, second.direction)) == 0;
+}
+
+// Returns the unique intersection point.
+// Returns nullopt for parallel or coincident lines.
+optional<Point> lineIntersection(Line first, Line second) {
+    ld denominator = cross(first.direction, second.direction);
+
+    if (sign(denominator) == 0) {
+        return nullopt;
+    }
+
+    ld parameter =
+        cross(second.point - first.point, second.direction)
+        / denominator;
+
+    return first.point + first.direction * parameter;
+}
+
+Point projectionOnLine(Point point, Line line) {
+    ld denominator = normSquared(line.direction);
+
+    if (denominator <= EPS) {
+        return line.point;
+    }
+
+    ld parameter =
+        dot(point - line.point, line.direction) / denominator;
+
+    return line.point + line.direction * parameter;
+}
+
+Point reflectionAcrossLine(Point point, Line line) {
+    Point projection = projectionOnLine(point, line);
+    return projection * 2 - point;
+}
+
+ld distancePointToLine(Point point, Line line) {
+    ld directionLength = length(line.direction);
+
+    if (directionLength <= EPS) {
+        return distance(point, line.point);
+    }
+
+    return fabsl(cross(line.direction, point - line.point))
+           / directionLength;
+}
+
+bool onSegment(Point point, Point a, Point b) {
+    if (orientation(a, b, point) != 0) {
+        return false;
+    }
+
+    return dot(point - a, point - b) <= EPS;
+}
+
+Point closestPointOnSegment(Point point, Point a, Point b) {
+    Point direction = b - a;
+    ld denominator = normSquared(direction);
+
+    if (denominator <= EPS) {
+        return a;
+    }
+
+    ld parameter = dot(point - a, direction) / denominator;
+    parameter = max<ld>(0, min<ld>(1, parameter));
+
+    return a + direction * parameter;
+}
+
+ld distancePointToSegment(Point point, Point a, Point b) {
+    return distance(point, closestPointOnSegment(point, a, b));
+}
+
+bool segmentsIntersect(Point a, Point b, Point c, Point d) {
+    int o1 = orientation(a, b, c);
+    int o2 = orientation(a, b, d);
+    int o3 = orientation(c, d, a);
+    int o4 = orientation(c, d, b);
+
+    if (o1 == 0 && onSegment(c, a, b)) return true;
+    if (o2 == 0 && onSegment(d, a, b)) return true;
+    if (o3 == 0 && onSegment(a, c, d)) return true;
+    if (o4 == 0 && onSegment(b, c, d)) return true;
+
+    return o1 != o2 && o3 != o4;
+}
+
+ld distanceBetweenSegments(Point a, Point b, Point c, Point d) {
+    if (segmentsIntersect(a, b, c, d)) {
+        return 0;
+    }
+
+    return min({
+        distancePointToSegment(a, c, d),
+        distancePointToSegment(b, c, d),
+        distancePointToSegment(c, a, b),
+        distancePointToSegment(d, a, b)
+    });
+}
+
+// --------------------------------------------------
+// Polygons
+// --------------------------------------------------
+
+ld signedPolygonArea(const vector<Point>& polygon) {
+    int n = static_cast<int>(polygon.size());
+    ld result = 0;
+
+    for (int i = 0; i < n; i++) {
+        result += cross(polygon[i], polygon[(i + 1) % n]);
+    }
+
+    return result / 2;
+}
+
+ld polygonArea(const vector<Point>& polygon) {
+    return fabsl(signedPolygonArea(polygon));
+}
+
+ld polygonPerimeter(const vector<Point>& polygon) {
+    int n = static_cast<int>(polygon.size());
+    ld result = 0;
+
+    for (int i = 0; i < n; i++) {
+        result += distance(polygon[i], polygon[(i + 1) % n]);
+    }
+
+    return result;
+}
+
+// Returns:
+// 0 = outside
+// 1 = on boundary
+// 2 = inside
+int pointInPolygon(Point point, const vector<Point>& polygon) {
+    bool inside = false;
+    int n = static_cast<int>(polygon.size());
+
+    for (int i = 0, j = n - 1; i < n; j = i++) {
+        Point a = polygon[j];
+        Point b = polygon[i];
+
+        if (onSegment(point, a, b)) {
+            return 1;
+        }
+
+        bool crossesY =
+            (a.y > point.y) != (b.y > point.y);
+
+        if (crossesY) {
+            ld intersectionX =
+                a.x + (b.x - a.x)
+                * (point.y - a.y)
+                / (b.y - a.y);
+
+            if (intersectionX > point.x) {
+                inside = !inside;
+            }
+        }
+    }
+
+    return inside ? 2 : 0;
+}
+
+// Monotonic-chain convex hull.
+//
+// removeCollinear = true:
+//   Keeps only the extreme points on each hull edge.
+//
+// removeCollinear = false:
+//   Keeps collinear boundary points.
+vector<Point> convexHull(
+    vector<Point> points,
+    bool removeCollinear = true
+) {
+    sort(points.begin(), points.end());
+
+    points.erase(
+        unique(
+            points.begin(),
+            points.end(),
+            [](Point a, Point b) {
+                return a == b;
+            }
+        ),
+        points.end()
+    );
+
+    int n = static_cast<int>(points.size());
+
+    if (n <= 1) {
+        return points;
+    }
+
+    vector<Point> lower;
+    vector<Point> upper;
+
+    auto shouldRemove = [&](Point a, Point b, Point c) {
+        int turn = orientation(a, b, c);
+
+        if (removeCollinear) {
+            return turn <= 0;
+        }
+
+        return turn < 0;
+    };
+
+    for (Point point : points) {
+        while (
+            lower.size() >= 2 &&
+            shouldRemove(
+                lower[lower.size() - 2],
+                lower.back(),
+                point
+            )
+        ) {
+            lower.pop_back();
+        }
+
+        lower.push_back(point);
+    }
+
+    for (int i = n - 1; i >= 0; i--) {
+        Point point = points[i];
+
+        while (
+            upper.size() >= 2 &&
+            shouldRemove(
+                upper[upper.size() - 2],
+                upper.back(),
+                point
+            )
+        ) {
+            upper.pop_back();
+        }
+
+        upper.push_back(point);
+    }
+
+    lower.pop_back();
+    upper.pop_back();
+
+    lower.insert(lower.end(), upper.begin(), upper.end());
+    return lower;
+}
+
+// Point-in-convex-polygon in O(log n).
+// Polygon must be counterclockwise with no repeated final point.
+//
+// Returns:
+// 0 = outside
+// 1 = on boundary
+// 2 = inside
+int pointInConvexPolygon(
+    Point point,
+    const vector<Point>& polygon
+) {
+    int n = static_cast<int>(polygon.size());
+
+    if (n == 0) return 0;
+    if (n == 1) return point == polygon[0] ? 1 : 0;
+    if (n == 2) return onSegment(point, polygon[0], polygon[1]) ? 1 : 0;
+
+    if (orientation(polygon[0], polygon[1], point) < 0) {
+        return 0;
+    }
+
+    if (orientation(polygon[0], polygon[n - 1], point) > 0) {
+        return 0;
+    }
+
+    if (onSegment(point, polygon[0], polygon[1])) return 1;
+    if (onSegment(point, polygon[0], polygon[n - 1])) return 1;
+
+    int left = 1;
+    int right = n - 1;
+
+    while (right - left > 1) {
+        int middle = (left + right) / 2;
+
+        if (orientation(polygon[0], polygon[middle], point) >= 0) {
+            left = middle;
+        } else {
+            right = middle;
+        }
+    }
+
+    int turn = orientation(polygon[left], polygon[right], point);
+
+    if (turn < 0) return 0;
+    if (turn == 0) return 1;
+    return 2;
+}
+
+// --------------------------------------------------
+// Circles
+// --------------------------------------------------
+
+struct Circle {
+    Point center;
+    ld radius;
+
+    Circle(Point center = {}, ld radius = 0)
+        : center(center), radius(radius) {}
+};
+
+bool insideCircle(Point point, Circle circle) {
+    return distance(point, circle.center) <= circle.radius + EPS;
+}
+
+// Intersections between an infinite line and a circle.
+// Returns 0, 1, or 2 points.
+vector<Point> lineCircleIntersections(Line line, Circle circle) {
+    vector<Point> result;
+
+    if (normSquared(line.direction) <= EPS) {
+        if (equal(distance(line.point, circle.center), circle.radius)) {
+            result.push_back(line.point);
+        }
+
+        return result;
+    }
+
+    Point projection = projectionOnLine(circle.center, line);
+    ld centerDistance = distance(projection, circle.center);
+
+    if (centerDistance > circle.radius + EPS) {
+        return result;
+    }
+
+    if (equal(centerDistance, circle.radius)) {
+        result.push_back(projection);
+        return result;
+    }
+
+    ld offsetLength = sqrtl(
+        max<ld>(
+            0,
+            circle.radius * circle.radius
+            - centerDistance * centerDistance
+        )
+    );
+
+    Point offset = unit(line.direction) * offsetLength;
+
+    result.push_back(projection - offset);
+    result.push_back(projection + offset);
+
+    return result;
+}
+
+// Returns 0, 1, or 2 circle intersection points.
+// Coincident circles return an empty vector because they have
+// infinitely many intersections.
+vector<Point> circleCircleIntersections(
+    Circle first,
+    Circle second
+) {
+    vector<Point> result;
+
+    ld d = distance(first.center, second.center);
+
+    if (d <= EPS) {
+        return result;
+    }
+
+    if (d > first.radius + second.radius + EPS) {
+        return result;
+    }
+
+    if (d + min(first.radius, second.radius)
+        < max(first.radius, second.radius) - EPS) {
+        return result;
+    }
+
+    ld along =
+        (
+            first.radius * first.radius
+            - second.radius * second.radius
+            + d * d
+        ) / (2 * d);
+
+    ld heightSquared =
+        first.radius * first.radius - along * along;
+
+    if (heightSquared < -EPS) {
+        return result;
+    }
+
+    Point direction =
+        (second.center - first.center) / d;
+
+    Point base =
+        first.center + direction * along;
+
+    if (fabsl(heightSquared) <= EPS) {
+        result.push_back(base);
+        return result;
+    }
+
+    ld height = sqrtl(max<ld>(0, heightSquared));
+    Point offset = perpendicular(direction) * height;
+
+    result.push_back(base + offset);
+    result.push_back(base - offset);
+
+    return result;
+}
+
+// Circle through three non-collinear points.
+optional<Circle> circumcircle(Point a, Point b, Point c) {
+    Point midpointAB = (a + b) / 2;
+    Point midpointAC = (a + c) / 2;
+
+    Line bisectorAB{
+        midpointAB,
+        perpendicular(b - a)
+    };
+
+    Line bisectorAC{
+        midpointAC,
+        perpendicular(c - a)
+    };
+
+    optional<Point> center =
+        lineIntersection(bisectorAB, bisectorAC);
+
+    if (!center.has_value()) {
+        return nullopt;
+    }
+
+    return Circle(*center, distance(*center, a));
+}
+
+// Tangent points from an external point to a circle.
+// Returns:
+// 0 points if inside
+// 1 point if on the circle
+// 2 points if outside
+vector<Point> tangentPoints(Point point, Circle circle) {
+    vector<Point> result;
+
+    Point direction = point - circle.center;
+    ld dSquared = normSquared(direction);
+    ld radiusSquared = circle.radius * circle.radius;
+
+    if (dSquared < radiusSquared - EPS) {
+        return result;
+    }
+
+    if (equal(dSquared, radiusSquared)) {
+        result.push_back(point);
+        return result;
+    }
+
+    ld baseFactor = radiusSquared / dSquared;
+
+    Point base =
+        circle.center + direction * baseFactor;
+
+    ld offsetFactor =
+        circle.radius
+        * sqrtl(max<ld>(0, dSquared - radiusSquared))
+        / dSquared;
+
+    Point offset =
+        perpendicular(direction) * offsetFactor;
+
+    result.push_back(base + offset);
+    result.push_back(base - offset);
+
+    return result;
+}
+
+// --------------------------------------------------
+// Example solve
+// --------------------------------------------------
+
+void solve() {
+    int n;
+    cin >> n;
+
+    vector<Point> points(n);
+
+    for (Point& point : points) {
+        cin >> point;
+    }
+
+    vector<Point> hull = convexHull(points);
+
+    cout << hull.size() << '\n';
+
+    for (Point point : hull) {
+        cout << point << '\n';
+    }
+
+    cout << "Area: "
+         << fixed << setprecision(10)
+         << polygonArea(hull) << '\n';
+}
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    solve();
+    return 0;
+}

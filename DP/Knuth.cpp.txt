@@ -1,0 +1,61 @@
+#include <bits/stdc++.h>
+#include <ext/pb_ds/assoc_container.hpp>
+#include <ext/pb_ds/tree_policy.hpp>
+#define test int tttt=0;cin>>tttt;while(tttt--)
+#define fast ios_base::sync_with_stdio(0);cin.tie(0);
+#define endl "\n"
+#define ll long long
+#define ld long double
+#define int ll
+#define sz(s) (int)(s).size()
+using namespace std;
+#pragma GCC optimize("O3")
+#pragma GCC optimize("Ofast,unroll-loops")
+using namespace __gnu_pbds;
+
+
+void solve() {
+
+    int n; cin >> n;
+    vector<int> arr(n), pref(n);
+
+    for (int i = 0; i < n; ++i) {
+        cin >> arr[i];
+        pref[i] = arr[i];
+        if(i) pref[i] += pref[i - 1];
+    }
+
+    int dp[n][n];
+    int opt[n][n];
+    for (int i = 0; i < n; ++i) {
+        dp[i][i] = 0;
+        opt[i][i] = i;
+    }
+
+    for (int len = 2; len <= n; ++len) {
+        for (int l = 0; l <= n - len; ++l) {
+            int r = l + len - 1;
+            int sum = pref[r];
+            if(l) sum -= pref[l - 1];
+
+            dp[l][r] = 1e18;
+            for (int k = max(l, opt[l][r - 1]); k <= min(opt[l + 1][r], r - 1); ++k) {
+                int curr = dp[l][k] + dp[k + 1][r] + sum;
+                if(curr < dp[l][r]) {
+                    dp[l][r] = curr;
+                    opt[l][r] = k;
+                }
+            }
+        }
+    }
+
+    cout << dp[0][n - 1] << '\n';
+}
+
+signed main() {
+    fast
+
+
+    // test
+    solve();
+}

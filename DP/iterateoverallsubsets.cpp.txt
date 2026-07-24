@@ -1,0 +1,79 @@
+#include <bits/stdc++.h>
+#define test int tttt=0;cin>>tttt;while(tttt--)
+#define fast ios_base::sync_with_stdio(0);cin.tie(0);
+#define endl "\n"
+#define ll long long
+#define ld long double
+#define int ll
+#define sz(s) (int)(s).size()
+using namespace std;
+
+
+
+void ip(){
+#ifndef ONLINE_JUDGE
+    freopen("input.txt", "r", stdin);
+    freopen("output.txt", "w", stdout);
+#endif
+}
+
+const int N = 19, mod = 1e9 + 7;
+
+int dp[1 << N],n,m;
+int isEdge[N][N];
+bool ValidMask[1 << N];
+int go(int mask){
+
+    if (mask == 0) return 0;
+
+    int &ret = dp[mask];
+    if (~ret) return ret;
+    ret = 1e18;
+    for (int s=mask; s; s=(s-1)&mask) {
+
+        if (ValidMask[s])
+            ret = min(ret,go(mask ^ s) + 1);
+    }
+
+    return ret;
+}
+
+void solve() {
+
+    cin >> n >> m;
+    for (int i = 0; i < m; i++) {
+
+        int u,v; cin >> u >> v;
+        u--,v--;
+        isEdge[u][v] = 1;
+        isEdge[v][u] = 1;
+    }
+
+    for (int mask = 1; mask < (1 << n); mask++) {
+        bool can = 1;
+        for (int i = 0; i < n; i++) {
+            if ((mask & 1 << i)) {
+                for (int j = i + 1; j < n; j++) {
+                    if (!isEdge[i][j] and (mask & 1 << j)) {
+                        can = 0;
+                        break;
+                    }
+
+                }
+
+            }
+            if (!can) break;
+        }
+        ValidMask[mask] = can;
+    }
+    memset(dp, -1, sizeof dp);
+    cout << go((1 << n ) - 1) << endl;
+
+}
+signed main() {
+    fast
+    ip();
+
+    // test
+    solve();
+}

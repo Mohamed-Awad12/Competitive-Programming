@@ -1,0 +1,57 @@
+#include <bits/stdc++.h>
+#define test int tttt=0;cin>>tttt;while(tttt--)
+#define fast ios_base::sync_with_stdio(0);cin.tie(0);
+#define endl "\n"
+#define ll long long
+#define ld long double
+#define int ll
+#define sz(s) (int)(s).size()
+using namespace std;
+
+
+
+void ip(){
+#ifndef ONLINE_JUDGE
+    freopen("input.txt", "r", stdin);
+    freopen("output.txt", "w", stdout);
+#endif
+}
+
+const int N = 55, mod = 1e9 + 7;
+string L,R;
+int n;
+int dp[N][2][2][4];
+int go(int idx, bool lower,bool upper, int cnt){
+
+    if (cnt > 3) return 0;
+    if (idx == n) return 1;
+
+    int &ret = dp[idx][lower][upper][cnt];
+    if (~ret and lower and upper) return ret;
+
+    ret = 0;
+    int left = L[idx] - '0';
+    int right = R[idx] - '0';
+
+    for (int i = lower ? 0 : left; i <= (upper ? 9 : right); i++) {
+        ret += go(idx + 1,lower or i > left, upper or i < right,cnt + (i != 0));
+    }
+
+    return ret;
+}
+
+void solve() {
+
+    cin >> L >> R;
+    n = 20;
+    while (L.size() < n) L = '0' + L;
+    while (R.size() < n) R = '0' + R;
+    cout << go(0,0,0,0) << endl;
+}
+signed main() {
+    fast
+    ip();
+    memset(dp,-1,sizeof dp);
+    test
+    solve();
+}
