@@ -10,124 +10,108 @@ using namespace std;
 #pragma GCC optimize("O3")
 #pragma GCC optimize("Ofast,unroll-loops")
 struct Node {
-    int val = -1e18;
-};
-
-Node neutral;
+    int val = 0;
+} neutral;
+ 
 struct segtree {
-    vector<Node> tree;
+    segtree *left = nullptr, *right = nullptr;
+ 
+    Node node = {};
+ 
     int start, end;
-    int n;
-
-    segtree(int l = 0, int r = 0) : start(l), end(r) {
-        int len = end - start + 1;
-        n = 1;
-        while (n < len) n <<= 1;
-        tree.assign(2 * n, neutral);
+ 
+    segtree(int l = 0, int r = 0) : start(l), end(r) {}
+ 
+    void extend() {
+        if (left == nullptr) {
+            int mid = start + end >> 1;
+            left = new segtree(start, mid);
+            right = new segtree(mid + 1, end);
+        }
     }
-
+ 
     Node pushup(Node a, Node b) {
         Node ret;
-        ret.val = max(a.val, b.val);
+        ret.val = max(a.val , b.val);
         return ret;
     }
-
-    void build(vector<int>& a) {
-        fill(tree.begin(), tree.end(), neutral);
-
-        for (int i = start; i <= end; i++) {
-            int pos = i - start;
-
-            if (0 <= i && i < sz(a)) {
-                tree[n + pos].val = a[i];
-            } else {
-                tree[n + pos] = neutral;
-            }
-        }
-
-        for (int i = n - 1; i >= 1; i--) {
-            tree[i] = pushup(tree[i << 1], tree[i << 1 | 1]);
-        }
-    }
-
-    void update(int idx, int val) {
-        if (idx < start || idx > end)
+ 
+    void build() {
+        if (start == end) {
+            node.val = 0;
             return;
-
-        int pos = idx - start + n;
-        tree[pos].val = val;
-
-        pos >>= 1;
-
-        while (pos) {
-            tree[pos] = pushup(tree[pos << 1], tree[pos << 1 | 1]);
-            pos >>= 1;
         }
+        extend();
+        left->build();
+        right->build();
+        node = pushup(left->node, right->node);
     }
-
-    Node query(int l, int r) {
-        if (l > r)
-            return neutral;
-
-        l = max(l, start);
-        r = min(r, end);
-
-        if (l > r)
-            return neutral;
-
-        l = l - start + n;
-        r = r - start + n;
-
-        Node left_ans = neutral;
-        Node right_ans = neutral;
-
-        while (l <= r) {
-            if (l & 1) {
-                left_ans = pushup(left_ans, tree[l]);
-                l++;
-            }
-
-            if (!(r & 1)) {
-                right_ans = pushup(tree[r], right_ans);
-                r--;
-            }
-
-            l >>= 1;
-            r >>= 1;
+ 
+    void update(int idx, int val) {
+        if (start > idx || end < idx)
+            return;
+        if (start == end) {
+            node.val = val;
+            return;
         }
-
-        return pushup(left_ans, right_ans);
+        extend();
+        left->update(idx, val);
+        right->update(idx, val);
+        node = pushup(left->node, right->node);
+    }
+ 
+    Node query(int l, int r) {
+        if (r < start || end < l)
+            return neutral;
+        extend();
+        if (l <= start && end <= r)
+            return node;
+        Node ret = pushup(left->query(l , r), right->query(l , r));
+        return ret;
+    }
+ 
+    ~segtree() {
+        if (left == nullptr)return;
+        delete left;
+        delete right;
     }
 };
+ 
+ 
 void solve() {
-    int n,k,x;
-    cin >> n >> k >> x;
-    vector<int>a(n);
-    for (int i = 0; i < n; i++) cin >> a[i];
-    vector<int>dp(n + 1, -1e18), ndp(n + 1,-1e18);
-    segtree seg(0,n + 1);
-
-
-
-    for (int i = 0; i < k; i++) dp[i] = a[i], seg.update(i,a[i]);
-    for (int cnt = 2; cnt <= x; cnt++) {
-        seg.build(dp);
-        for (int i = 0; i < n; i++) {
-            int l = max(i - k,0ll), r = i - 1;
-            ndp[i] = a[i] + seg.query(l,r).val;
-        }
-        dp = ndp;
+ 
+    int n; cin >> n;
+    int a[n];
+    vector<int>comp;
+    for (int i = 0; i < n; i++) {
+        cin >> a[i];
+        comp.push_back(a[i]);
     }
-
-    int ans = -1e18;
-    for (int i = n - k; i < n; i++) {
-        ans = max(ans, dp[i]);
+ 
+    sort(comp.begin(), comp.end());
+    comp.erase(unique(comp.begin(), comp.end()),comp.end());
+ 
+    auto get_id = [&](int x) {
+ 
+        return lower_bound(comp.begin(), comp.end(),x) - comp.begin() + 1;
+    };
+ 
+    segtree seg(1,comp.size());
+    seg.build();
+    int dp, ans = 1;
+    for (int i = 0; i < n; i++) {
+        int l = 1, r = get_id(a[i]) - 1;
+        dp = 1 + seg.query(l,r).val;
+        seg.update(get_id(a[i]),dp);
+        ans = max(ans,dp);
     }
-
-    cout << (ans <= -1e18 / 2? -1 : ans) << endl;
+ 
+    cout << ans << endl;
 }
+ 
 signed main() {
     fast
     // test
         solve();
 }
+//
