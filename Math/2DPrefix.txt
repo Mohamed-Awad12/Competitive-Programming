@@ -1,0 +1,39 @@
+template <typename T = long long>
+struct Prefix2D {
+    int n, m;
+    vector<vector<T>> pref;
+
+    Prefix2D() {}
+
+    Prefix2D(const vector<vector<T>>& a) {
+        build(a);
+    }
+
+    void build(const vector<vector<T>>& a) {
+        n = a.size();
+        m = n ? a[0].size() : 0;
+
+        pref.assign(n + 1, vector<T>(m + 1, 0));
+
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < m; j++) {
+                pref[i + 1][j + 1] =
+                    a[i][j]
+                    + pref[i][j + 1]
+                    + pref[i + 1][j]
+                    - pref[i][j];
+            }
+        }
+    }
+
+    // Sum of rectangle:
+    // rows [r1, r2]
+    // cols [c1, c2]
+    // 0-indexed, inclusive
+    T query(int r1, int c1, int r2, int c2) const {
+        return pref[r2 + 1][c2 + 1]
+             - pref[r1][c2 + 1]
+             - pref[r2 + 1][c1]
+             + pref[r1][c1];
+    }
+};

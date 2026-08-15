@@ -216,6 +216,42 @@ bool isPrimeSlow(ll n) {
 
 //////////////////////////////////////////////////////////////
 
+struct Divisors {
+    int N;
+    vector<int> spf;
+ 
+    Divisors(int n) : N(n), spf(n + 1) {
+        iota(spf.begin(), spf.end(), 0);
+ 
+        for (int i = 2; 1LL * i * i <= N; i++) {
+            if (spf[i] == i) {
+                for (long long j = 1LL * i * i; j <= N; j += i) {
+                    if (spf[j] == j)
+                        spf[j] = i;
+                }
+            }
+        }
+    }
+ 
+    long long count(int n) {
+        long long ans = 1;
+ 
+        while (n > 1) {
+            int p = spf[n];
+            int cnt = 0;
+ 
+            while (n % p == 0) {
+                n /= p;
+                cnt++;
+            }
+ 
+            ans *= cnt + 1;
+        }
+ 
+        return ans;
+    }
+};
+
 int main() {
     ios::sync_with_stdio(false);
     cin.tie(nullptr);
