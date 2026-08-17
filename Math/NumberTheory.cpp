@@ -252,6 +252,17 @@ struct Divisors {
     }
 };
 
+
+// omega[x] = number of distinct prime divisors of x
+    vector<int> omega(mx + 1, 0);
+
+    for (int p = 2; p <= mx; ++p) {
+        if (omega[p] == 0) {  // p is prime
+            for (int x = p; x <= mx; x += p) {
+                ++omega[x];
+            }
+        }
+    }
 int main() {
     ios::sync_with_stdio(false);
     cin.tie(nullptr);
