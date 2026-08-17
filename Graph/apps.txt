@@ -1,0 +1,799 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+using ll = long long;
+
+#define all(x) (x).begin(), (x).end()
+
+const int INF = 1e9;
+const ll LINF = 4e18;
+
+// ============================================================
+// 1. BASIC GRAPH
+// ============================================================
+
+int n, m;
+vector<vector<int>> adj;
+
+void init_graph(int N) {
+    n = N;
+    adj.assign(n, {});
+}
+
+void add_undirected_edge(int u, int v) {
+    adj[u].push_back(v);
+    adj[v].push_back(u);
+}
+
+void add_directed_edge(int u, int v) {
+    adj[u].push_back(v);
+}
+
+
+// ============================================================
+// 2. BASIC DFS
+// Applications:
+// - reachability
+// - connected components
+// - subtree processing
+// - cycle detection
+// - timestamps
+// ============================================================
+
+vector<int> vis;
+
+void dfs(int u) {
+    vis[u] = 1;
+
+    // process u
+
+    for (int v : adj[u]) {
+        if (!vis[v]) {
+            dfs(v);
+        }
+    }
+
+    // process u after children
+}
+
+
+// ============================================================
+// 3. ITERATIVE DFS
+// Use this if recursion depth may be too large.
+// ============================================================
+
+void iterative_dfs(int src) {
+    vector<int> visited(n, 0);
+    stack<int> st;
+
+    st.push(src);
+
+    while (!st.empty()) {
+        int u = st.top();
+        st.pop();
+
+        if (visited[u])
+            continue;
+
+        visited[u] = 1;
+
+        // process u
+
+        for (int v : adj[u]) {
+            if (!visited[v])
+                st.push(v);
+        }
+    }
+}
+
+
+// ============================================================
+// 4. BFS
+// Applications:
+// - shortest path in unweighted graph
+// - minimum number of edges
+// - levels
+// - multi-source BFS
+// ============================================================
+
+vector<int> bfs(int src) {
+    vector<int> dist(n, -1);
+    queue<int> q;
+
+    dist[src] = 0;
+    q.push(src);
+
+    while (!q.empty()) {
+        int u = q.front();
+        q.pop();
+
+        for (int v : adj[u]) {
+            if (dist[v] == -1) {
+                dist[v] = dist[u] + 1;
+                q.push(v);
+            }
+        }
+    }
+
+    return dist;
+}
+
+
+// ============================================================
+// 5. BFS + RESTORE SHORTEST PATH
+// ============================================================
+
+vector<int> shortest_path(int src, int target) {
+    vector<int> dist(n, -1);
+    vector<int> parent(n, -1);
+
+    queue<int> q;
+    q.push(src);
+    dist[src] = 0;
+
+    while (!q.empty()) {
+        int u = q.front();
+        q.pop();
+
+        for (int v : adj[u]) {
+            if (dist[v] == -1) {
+                dist[v] = dist[u] + 1;
+                parent[v] = u;
+                q.push(v);
+            }
+        }
+    }
+
+    if (dist[target] == -1)
+        return {};
+
+    vector<int> path;
+
+    for (int u = target; u != -1; u = parent[u])
+        path.push_back(u);
+
+    reverse(all(path));
+
+    return path;
+}
+
+
+// ============================================================
+// 6. MULTI-SOURCE BFS
+// Distance to nearest source.
+// ============================================================
+
+vector<int> multi_source_bfs(vector<int> sources) {
+    vector<int> dist(n, -1);
+    queue<int> q;
+
+    for (int s : sources) {
+        dist[s] = 0;
+        q.push(s);
+    }
+
+    while (!q.empty()) {
+        int u = q.front();
+        q.pop();
+
+        for (int v : adj[u]) {
+            if (dist[v] == -1) {
+                dist[v] = dist[u] + 1;
+                q.push(v);
+            }
+        }
+    }
+
+    return dist;
+}
+
+
+// ============================================================
+// 7. CONNECTED COMPONENTS
+// Undirected graph
+// ============================================================
+
+vector<int> component;
+int components;
+
+void dfs_component(int u, int id) {
+    component[u] = id;
+
+    for (int v : adj[u]) {
+        if (component[v] == -1)
+            dfs_component(v, id);
+    }
+}
+
+int find_components() {
+    component.assign(n, -1);
+    components = 0;
+
+    for (int i = 0; i < n; i++) {
+        if (component[i] == -1) {
+            dfs_component(i, components);
+            components++;
+        }
+    }
+
+    return components;
+}
+
+
+// ============================================================
+// 8. UNDIRECTED GRAPH CYCLE DETECTION
+// ============================================================
+
+vector<int> cycle_vis;
+
+bool dfs_cycle_undirected(int u, int parent) {
+    cycle_vis[u] = 1;
+
+    for (int v : adj[u]) {
+        if (!cycle_vis[v]) {
+            if (dfs_cycle_undirected(v, u))
+                return true;
+        }
+        else if (v != parent) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool has_cycle_undirected() {
+    cycle_vis.assign(n, 0);
+
+    for (int i = 0; i < n; i++) {
+        if (!cycle_vis[i] &&
+            dfs_cycle_undirected(i, -1)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+
+// ============================================================
+// 9. DIRECTED GRAPH CYCLE DETECTION
+//
+// color:
+// 0 = unvisited
+// 1 = currently in DFS stack
+// 2 = completely processed
+// ============================================================
+
+vector<int> color;
+
+bool dfs_cycle_directed(int u) {
+    color[u] = 1;
+
+    for (int v : adj[u]) {
+        if (color[v] == 1)
+            return true;
+
+        if (color[v] == 0 &&
+            dfs_cycle_directed(v))
+            return true;
+    }
+
+    color[u] = 2;
+    return false;
+}
+
+bool has_cycle_directed() {
+    color.assign(n, 0);
+
+    for (int i = 0; i < n; i++) {
+        if (color[i] == 0 &&
+            dfs_cycle_directed(i)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+
+// ============================================================
+// 10. BIPARTITE GRAPH CHECK
+// Works across disconnected components.
+// ============================================================
+
+vector<int> col;
+
+bool is_bipartite() {
+    col.assign(n, -1);
+
+    for (int src = 0; src < n; src++) {
+        if (col[src] != -1)
+            continue;
+
+        queue<int> q;
+        q.push(src);
+        col[src] = 0;
+
+        while (!q.empty()) {
+            int u = q.front();
+            q.pop();
+
+            for (int v : adj[u]) {
+                if (col[v] == -1) {
+                    col[v] = col[u] ^ 1;
+                    q.push(v);
+                }
+                else if (col[v] == col[u]) {
+                    return false;
+                }
+            }
+        }
+    }
+
+    return true;
+}
+
+
+// ============================================================
+// 11. TOPOLOGICAL SORT - DFS
+// Directed Acyclic Graph
+// ============================================================
+
+vector<int> topo;
+vector<int> topo_vis;
+
+void topo_dfs(int u) {
+    topo_vis[u] = 1;
+
+    for (int v : adj[u]) {
+        if (!topo_vis[v])
+            topo_dfs(v);
+    }
+
+    topo.push_back(u);
+}
+
+vector<int> topological_sort_dfs() {
+    topo.clear();
+    topo_vis.assign(n, 0);
+
+    for (int i = 0; i < n; i++) {
+        if (!topo_vis[i])
+            topo_dfs(i);
+    }
+
+    reverse(all(topo));
+
+    return topo;
+}
+
+
+// ============================================================
+// 12. TOPOLOGICAL SORT - KAHN
+//
+// Important:
+// topo.size() < n => directed graph contains cycle
+// ============================================================
+
+vector<int> topological_sort_kahn() {
+    vector<int> indegree(n);
+
+    for (int u = 0; u < n; u++) {
+        for (int v : adj[u])
+            indegree[v]++;
+    }
+
+    queue<int> q;
+
+    for (int i = 0; i < n; i++) {
+        if (indegree[i] == 0)
+            q.push(i);
+    }
+
+    vector<int> order;
+
+    while (!q.empty()) {
+        int u = q.front();
+        q.pop();
+
+        order.push_back(u);
+
+        for (int v : adj[u]) {
+            indegree[v]--;
+
+            if (indegree[v] == 0)
+                q.push(v);
+        }
+    }
+
+    if ((int)order.size() != n)
+        return {}; // cycle
+
+    return order;
+}
+
+
+// ============================================================
+// 13. TREE DFS
+// parent, depth, subtree size
+// ============================================================
+
+vector<int> parent_node;
+vector<int> depth;
+vector<int> subtree;
+
+void tree_dfs(int u, int p) {
+    parent_node[u] = p;
+    subtree[u] = 1;
+
+    for (int v : adj[u]) {
+        if (v == p)
+            continue;
+
+        depth[v] = depth[u] + 1;
+
+        tree_dfs(v, u);
+
+        subtree[u] += subtree[v];
+    }
+}
+
+void build_tree(int root = 0) {
+    parent_node.assign(n, -1);
+    depth.assign(n, 0);
+    subtree.assign(n, 0);
+
+    tree_dfs(root, -1);
+}
+
+
+// ============================================================
+// 14. TREE DIAMETER
+// Two BFS technique.
+// ============================================================
+
+pair<int, vector<int>> farthest_from(int src) {
+    vector<int> dist = bfs(src);
+
+    int farthest = src;
+
+    for (int i = 0; i < n; i++) {
+        if (dist[i] > dist[farthest])
+            farthest = i;
+    }
+
+    return {farthest, dist};
+}
+
+int tree_diameter() {
+    auto [a, _] = farthest_from(0);
+    auto [b, dist] = farthest_from(a);
+
+    return dist[b];
+}
+
+
+// ============================================================
+// 15. DFS ENTRY/EXIT TIMES
+//
+// u is ancestor of v iff:
+// tin[u] <= tin[v] && tout[v] <= tout[u]
+// ============================================================
+
+vector<int> tin, tout;
+int timer;
+
+void dfs_time(int u, int p = -1) {
+    tin[u] = timer++;
+
+    for (int v : adj[u]) {
+        if (v != p)
+            dfs_time(v, u);
+    }
+
+    tout[u] = timer++;
+}
+
+
+// ============================================================
+// 16. GRID DFS / FLOOD FILL
+// ============================================================
+
+int rows, cols;
+
+int dr[4] = {-1, 1, 0, 0};
+int dc[4] = {0, 0, -1, 1};
+
+bool valid(int r, int c) {
+    return r >= 0 && r < rows &&
+           c >= 0 && c < cols;
+}
+
+void grid_dfs(
+    int r,
+    int c,
+    vector<string>& grid,
+    vector<vector<int>>& visited
+) {
+    visited[r][c] = 1;
+
+    for (int d = 0; d < 4; d++) {
+        int nr = r + dr[d];
+        int nc = c + dc[d];
+
+        if (valid(nr, nc) &&
+            !visited[nr][nc] &&
+            grid[nr][nc] != '#') {
+
+            grid_dfs(nr, nc, grid, visited);
+        }
+    }
+}
+
+
+// ============================================================
+// 17. GRID BFS
+// Shortest path on grid
+// ============================================================
+
+vector<vector<int>> grid_bfs(
+    int sr,
+    int sc,
+    vector<string>& grid
+) {
+    rows = grid.size();
+    cols = grid[0].size();
+
+    vector<vector<int>> dist(
+        rows,
+        vector<int>(cols, -1)
+    );
+
+    queue<pair<int,int>> q;
+
+    q.push({sr, sc});
+    dist[sr][sc] = 0;
+
+    while (!q.empty()) {
+        auto [r, c] = q.front();
+        q.pop();
+
+        for (int d = 0; d < 4; d++) {
+            int nr = r + dr[d];
+            int nc = c + dc[d];
+
+            if (valid(nr, nc) &&
+                grid[nr][nc] != '#' &&
+                dist[nr][nc] == -1) {
+
+                dist[nr][nc] = dist[r][c] + 1;
+                q.push({nr, nc});
+            }
+        }
+    }
+
+    return dist;
+}
+
+
+// ============================================================
+// 18. BRIDGES
+//
+// Edge (u,v) is bridge when:
+// low[v] > tin[u]
+// ============================================================
+
+vector<int> bridge_tin;
+vector<int> low;
+vector<int> bridge_vis;
+int bridge_timer;
+vector<pair<int,int>> bridges;
+
+void bridge_dfs(int u, int parent = -1) {
+    bridge_vis[u] = 1;
+
+    bridge_tin[u] = low[u] = bridge_timer++;
+
+    for (int v : adj[u]) {
+        if (v == parent)
+            continue;
+
+        if (bridge_vis[v]) {
+            low[u] = min(low[u], bridge_tin[v]);
+        }
+        else {
+            bridge_dfs(v, u);
+
+            low[u] = min(low[u], low[v]);
+
+            if (low[v] > bridge_tin[u]) {
+                bridges.push_back({u, v});
+            }
+        }
+    }
+}
+
+vector<pair<int,int>> find_bridges() {
+    bridge_tin.assign(n, -1);
+    low.assign(n, -1);
+    bridge_vis.assign(n, 0);
+
+    bridge_timer = 0;
+    bridges.clear();
+
+    for (int i = 0; i < n; i++) {
+        if (!bridge_vis[i])
+            bridge_dfs(i);
+    }
+
+    return bridges;
+}
+
+
+// ============================================================
+// 19. ARTICULATION POINTS
+// ============================================================
+
+vector<int> articulation;
+vector<int> art_tin, art_low, art_vis;
+int art_timer;
+
+void articulation_dfs(int u, int parent = -1) {
+    art_vis[u] = 1;
+
+    art_tin[u] = art_low[u] = art_timer++;
+
+    int children = 0;
+
+    for (int v : adj[u]) {
+        if (v == parent)
+            continue;
+
+        if (art_vis[v]) {
+            art_low[u] =
+                min(art_low[u], art_tin[v]);
+        }
+        else {
+            articulation_dfs(v, u);
+
+            art_low[u] =
+                min(art_low[u], art_low[v]);
+
+            if (art_low[v] >= art_tin[u] &&
+                parent != -1) {
+
+                articulation[u] = 1;
+            }
+
+            children++;
+        }
+    }
+
+    if (parent == -1 && children > 1)
+        articulation[u] = 1;
+}
+
+vector<int> find_articulation_points() {
+    articulation.assign(n, 0);
+    art_tin.assign(n, -1);
+    art_low.assign(n, -1);
+    art_vis.assign(n, 0);
+
+    art_timer = 0;
+
+    for (int i = 0; i < n; i++) {
+        if (!art_vis[i])
+            articulation_dfs(i);
+    }
+
+    vector<int> ans;
+
+    for (int i = 0; i < n; i++) {
+        if (articulation[i])
+            ans.push_back(i);
+    }
+
+    return ans;
+}
+
+
+// ============================================================
+// 20. SCC - KOSARAJU
+// Directed graph
+// O(V + E)
+// ============================================================
+
+vector<int> scc_vis;
+vector<int> scc_order;
+
+void kosaraju_dfs1(int u) {
+    scc_vis[u] = 1;
+
+    for (int v : adj[u]) {
+        if (!scc_vis[v])
+            kosaraju_dfs1(v);
+    }
+
+    scc_order.push_back(u);
+}
+
+void kosaraju_dfs2(
+    int u,
+    vector<vector<int>>& radj,
+    vector<int>& comp,
+    int id
+) {
+    comp[u] = id;
+
+    for (int v : radj[u]) {
+        if (comp[v] == -1)
+            kosaraju_dfs2(v, radj, comp, id);
+    }
+}
+
+vector<int> kosaraju() {
+    scc_vis.assign(n, 0);
+    scc_order.clear();
+
+    for (int i = 0; i < n; i++) {
+        if (!scc_vis[i])
+            kosaraju_dfs1(i);
+    }
+
+    vector<vector<int>> radj(n);
+
+    for (int u = 0; u < n; u++) {
+        for (int v : adj[u])
+            radj[v].push_back(u);
+    }
+
+    reverse(all(scc_order));
+
+    vector<int> comp(n, -1);
+    int id = 0;
+
+    for (int u : scc_order) {
+        if (comp[u] == -1) {
+            kosaraju_dfs2(u, radj, comp, id);
+            id++;
+        }
+    }
+
+    return comp;
+}
+
+
+// ============================================================
+// MAIN TEMPLATE
+// ============================================================
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    cin >> n >> m;
+
+    init_graph(n);
+
+    for (int i = 0; i < m; i++) {
+        int u, v;
+        cin >> u >> v;
+
+        // Remove these if input is already 0-indexed.
+        --u;
+        --v;
+
+        add_undirected_edge(u, v);
+
+        // For directed:
+        // add_directed_edge(u, v);
+    }
+
+    // Example:
+    //
+    // vis.assign(n, 0);
+    // dfs(0);
+
+    return 0;
+}
